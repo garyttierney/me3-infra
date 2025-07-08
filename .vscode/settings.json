@@ -1,0 +1,7 @@
+{
+    "files.associations": {
+        "*.conf": "mkosi-conf",
+        "**/repart.d/*.conf": "systemd-conf"
+    },
+    "systemd.version": "v257",
+}

@@ -1,0 +1,17 @@
+{
+    "userName": "me3-test-os",
+    "uid": 1000,
+    "gid": 1000,
+    "disposition": "regular",
+    "enforcePasswordPolicy": false,
+    "memberOf": [
+        "wheel",
+        "systemd-journal"
+    ],
+    "secret": {
+        "password": ["me3-test-os"]
+    },
+    "privileged": {
+        "hashedPassword": ["$6$2EnN./cgthpYk8cA$SWmSF.yvovxcuJzBS1w7V0y1d3rKiQu1EhNueZVAc6Gc8MK10nLFahTobZUo5Rj6KZ0oXXuOQKAG0p7LU89xZ1"]
+    }
+}

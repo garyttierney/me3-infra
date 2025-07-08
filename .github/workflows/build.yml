@@ -1,0 +1,19 @@
+name: Build with mkosi
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up mkosi
+        uses: systemd/mkosi@main
+
+      - name: Run mkosi
+        run: mkosi

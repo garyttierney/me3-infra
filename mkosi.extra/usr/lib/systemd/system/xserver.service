@@ -1,0 +1,13 @@
+[Unit]
+Description=Headless X.org Server
+After=network.target
+
+[Service]
+Type=simple
+User=root
+ExecStart=/usr/bin/Xorg :0 -config /etc/X11/xorg.conf -noreset -sharevts -novtswitch
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
