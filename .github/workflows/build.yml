@@ -53,10 +53,51 @@ jobs:
           set-in-environment: true
 
       - run: aws sts get-caller-identity
+  burn-ami:
+    runs-on: self-hosted
+    needs:
+      - build
+      - setup-ami-builder
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: me3-test-os-image
+
+      - name: Burn image to disk
+        run: sudo dd if=mkosi.output/ of=/dev/nvme1n1 status=progress
+
+  create-ami:
+    runs-on: ubuntu-latest
+    needs:
+      - burn-ami
+    permissions:
+      id-token: write
+    steps:
+      - name: "Authenticate using Enhanced AuthFlow"
+        uses: catnekaise/cognito-idpool-auth@main
+        with:
+          auth-flow: "enhanced"
+          cognito-identity-pool-id: "eu-west-1:e981a34c-3d1f-485d-8aa9-308ba3aa5a59"
+          aws-region: "eu-west-1" # Overrides AWS_REGION env var
+          aws-account-id: "690169311973"
+          set-in-environment: true
+
+      - run: |
+          snapshot_id=$(aws ec2 create-snapshot --volume-id vol-03eac1eac73dd6808 \
+            --description 'me3-test-os' \
+            --tag-specifications 'ResourceType=snapshot,Tags=[]' | jq -r .SnapshotId)
+
+          aws ec2 register-image \
+              --name me3-test-os \
+              --root-device-name /dev/xvda \
+              --block-device-mappings "DeviceName=/dev/xvda,Ebs={SnapshotId=$snapshot_id}"
   cleanup:
     runs-on: ubuntu-latest
     needs:
       - build
+      - create-ami
     if: always()
     steps:
     - uses: geekyeggo/delete-artifact@v5
