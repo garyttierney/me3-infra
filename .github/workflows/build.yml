@@ -12,17 +12,24 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up mkosi cache
+      - name: Set up mkosi incremental cache
         uses: actions/cache@v4
         with:
           path: mkosi.cache
-          key: v1-mkosi
+          key: v1-mkosi-incremental
+
+      - name: Set up mkosi package cache
+        uses: actions/cache@v4
+        with:
+          path: mkosi.pkgcache
+          key: v1-mkosi-pkg
 
       - name: Set up mkosi
         uses: systemd/mkosi@main
 
       - name: Run mkosi
-        run: mkosi
+        run: |
+          mkosi --cache-directory=mkosi.cache/ --package-cache-dir=mkosi.pkgcache/
 
       - name: Install ec2-ami-tools
         run: sudo apt-get install -y ec2-ami-tools
