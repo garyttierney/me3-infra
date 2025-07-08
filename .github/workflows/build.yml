@@ -12,6 +12,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Set up mkosi cache
+        uses: actions/cache@v4
+        with:
+          path: mkosi.cache
+          key: v1-mkosi
+
       - name: Set up mkosi
         uses: systemd/mkosi@main
 

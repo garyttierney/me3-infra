@@ -7,7 +7,7 @@ enabled_metadata=0
 type=rpm-md
 gpgcheck=1
 repo_gpgcheck=0
-gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-rpmfusion-nonfree-fedora-$releasever
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-rpmfusion-nonfree-fedora-2020
 
 [rpmfusion-nonfree-updates-testing-debuginfo]
 name=RPM Fusion for Fedora $releasever - Nonfree - Test Updates Debug
@@ -17,7 +17,7 @@ enabled=0
 type=rpm-md
 gpgcheck=1
 repo_gpgcheck=0
-gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-rpmfusion-nonfree-fedora-$releasever
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-rpmfusion-nonfree-fedora-2020
 
 [rpmfusion-nonfree-updates-testing-source]
 name=RPM Fusion for Fedora $releasever - Nonfree - Test Updates Source
@@ -27,5 +27,6 @@ enabled=0
 type=rpm-md
 gpgcheck=1
 repo_gpgcheck=0
-gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-rpmfusion-nonfree-fedora-$releasever
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-rpmfusion-nonfree-fedora-2020
 
+  
