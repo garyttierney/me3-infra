@@ -23,3 +23,6 @@ jobs:
 
       - name: Run mkosi
         run: mkosi
+
+      - name: Install ec2-ami-tools
+        run: sudo apt-get install -y ec2-ami-tools
