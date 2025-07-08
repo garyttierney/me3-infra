@@ -51,6 +51,8 @@ jobs:
           aws-region: "eu-west-1" # Overrides AWS_REGION env var
           aws-account-id: "690169311973"
           set-in-environment: true
+
+      - run: aws sts get-caller-identity
   cleanup:
     runs-on: ubuntu-latest
     needs:
