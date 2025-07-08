@@ -67,7 +67,7 @@ jobs:
           name: me3-test-os-image
 
       - name: Burn image to disk
-        run: sudo dd if=me3-test-os_x86-64.raw of=/dev/nvme1n1 status=progress
+        run: sudo dd if=me3-test-os_x86-64.raw of=/dev/nvme1n1 status=progress bs=128K
 
   create-ami:
     runs-on: ubuntu-latest
