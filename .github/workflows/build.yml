@@ -80,7 +80,7 @@ jobs:
         uses: catnekaise/cognito-idpool-auth@main
         with:
           auth-flow: "enhanced"
-          cognito-identity-pool-id: "eu-west-1:e981a34c-3d1f-485d-8aa9-308ba3aa5a59"
+          cognito-identity-pool-id: "eu-west-1:f011ebda-1864-46b2-8479-f2a8c4bcd4cf"
           aws-region: "eu-west-1" # Overrides AWS_REGION env var
           aws-account-id: "690169311973"
           set-in-environment: true
@@ -98,7 +98,7 @@ jobs:
         uses: catnekaise/cognito-idpool-auth@main
         with:
           auth-flow: "enhanced"
-          cognito-identity-pool-id: "eu-west-1:e981a34c-3d1f-485d-8aa9-308ba3aa5a59"
+          cognito-identity-pool-id: "eu-west-1:f011ebda-1864-46b2-8479-f2a8c4bcd4cf"
           aws-region: "eu-west-1" # Overrides AWS_REGION env var
           aws-account-id: "690169311973"
           set-in-environment: true
