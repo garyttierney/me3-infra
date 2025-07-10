@@ -5,21 +5,60 @@ on:
     branches: [main]
   pull_request:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  build:
+  setup-ami-builder:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+    outputs:
+      label: ${{ steps.start-ec2-runner.outputs.label }}
+      ec2-instance-id: ${{ steps.start-ec2-runner.outputs.ec2-instance-id }}
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up mkosi cache
-        uses: actions/cache@v4
+      - name: "Authenticate using Enhanced AuthFlow"
+        uses: catnekaise/cognito-idpool-auth@main
         with:
-          path: mkosi.cache
-          key: v1-mkosi
-
-      - name: Set up mkosi
-        uses: systemd/mkosi@main
-
-      - name: Run mkosi
-        run: mkosi
+          auth-flow: "enhanced"
+          cognito-identity-pool-id: "eu-west-1:f011ebda-1864-46b2-8479-f2a8c4bcd4cf"
+          aws-region: "eu-west-1" # Overrides AWS_REGION env var
+          aws-account-id: "690169311973"
+          chain-role-arn: "arn:aws:iam::690169311973:role/gh-actions-small-instance-runner"
+          chain-pass-claims: "actor"
+          chain-set-in-environment: true
+      - name: Start EC2 runner
+        id: start-ec2-runner
+        uses: machulav/ec2-github-runner@v2
+        with:
+          mode: start
+          github-token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
+          ec2-image-id: ami-0fab1b527ffa9b942
+          ec2-instance-type: t3.medium
+          subnet-id: subnet-05f14d11599088456
+          security-group-id: sg-09ec39d95d6dacb82
+  stop-ami-builder:
+    name: Stop self-hosted EC2 runner
+    needs:
+      - setup-ami-builder # required to get output from the start-runner job
+    runs-on: ubuntu-latest
+    if: ${{ always() }} # required to stop the runner even if the error happened in the previous jobs
+    steps:
+      - name: "Authenticate using Enhanced AuthFlow"
+        uses: catnekaise/cognito-idpool-auth@main
+        with:
+          auth-flow: "enhanced"
+          cognito-identity-pool-id: "eu-west-1:f011ebda-1864-46b2-8479-f2a8c4bcd4cf"
+          aws-region: "eu-west-1" # Overrides AWS_REGION env var
+          aws-account-id: "690169311973"
+          chain-role-arn: "arn:aws:iam::690169311973:role/gh-actions-small-instance-runner"
+          chain-pass-claims: "actor"
+          chain-set-in-environment: true
+      - name: Stop EC2 runner
+        uses: machulav/ec2-github-runner@v2
+        with:
+          mode: stop
+          github-token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
+          label: ${{ needs.start-runner.outputs.label }}
+          ec2-instance-id: ${{ needs.start-runner.outputs.ec2-instance-id }}
