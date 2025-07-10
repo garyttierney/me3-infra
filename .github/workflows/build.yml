@@ -10,39 +10,13 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up mkosi incremental cache
-        uses: actions/cache@v4
-        with:
-          path: mkosi.cache
-          key: v1-mkosi-incremental
-
-      - name: Set up mkosi package cache
-        uses: actions/cache@v4
-        with:
-          path: mkosi.pkgcache
-          key: v1-mkosi-pkg
-
-      - name: Set up mkosi
-        uses: systemd/mkosi@main
-
-      - name: Run mkosi
-        run: |
-          mkosi --cache-directory=mkosi.cache/ --package-cache-dir=mkosi.pkgcache/
-          sudo chown -R $USER mkosi.cache/ # Fix permissions on mkosi.cache/
-      - uses: actions/upload-artifact@v4
-        with:
-            name: me3-test-os-image
-            path: mkosi.output/me3-test-os_x86-64.raw
   setup-ami-builder:
     runs-on: ubuntu-latest
     permissions:
       id-token: write
+    outputs:
+      label: ${{ steps.start-ec2-runner.outputs.label }}
+      ec2-instance-id: ${{ steps.start-ec2-runner.outputs.ec2-instance-id }}
     steps:
       - name: "Authenticate using Enhanced AuthFlow"
         uses: catnekaise/cognito-idpool-auth@main
@@ -51,30 +25,25 @@ jobs:
           cognito-identity-pool-id: "eu-west-1:f011ebda-1864-46b2-8479-f2a8c4bcd4cf"
           aws-region: "eu-west-1" # Overrides AWS_REGION env var
           aws-account-id: "690169311973"
-          set-in-environment: true
-
-      - run: aws ec2 start-instances --instance-ids=i-01edcb44c259d6fd3
-  burn-image:
-    runs-on: self-hosted
-    needs:
-      - build
-      - setup-ami-builder
-    permissions:
-      id-token: write
-    steps:
-      - uses: actions/download-artifact@v4
+          chain-role-arn: "arn:aws:iam::690169311973:role/gh-actions-small-instance-runner"
+          chain-pass-claims: "actor"
+          chain-set-in-environment: true
+      - name: Start EC2 runner
+        id: start-ec2-runner
+        uses: machulav/ec2-github-runner@v2
         with:
-          name: me3-test-os-image
-
-      - name: Burn image to disk
-        run: sudo dd if=me3-test-os_x86-64.raw of=/dev/nvme1n1 status=progress bs=128K
-
-  create-ami:
-    runs-on: ubuntu-latest
+          mode: start
+          github-token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
+          ec2-image-id: ami-0fab1b527ffa9b942
+          ec2-instance-type: t3.medium
+          subnet-id: subnet-05f14d11599088456
+          security-group-id: sg-09ec39d95d6dacb82
+  stop-ami-builder:
+    name: Stop self-hosted EC2 runner
     needs:
-      - burn-image
-    permissions:
-      id-token: write
+      - setup-ami-builder # required to get output from the start-runner job
+    runs-on: ubuntu-latest
+    if: ${{ always() }} # required to stop the runner even if the error happened in the previous jobs
     steps:
       - name: "Authenticate using Enhanced AuthFlow"
         uses: catnekaise/cognito-idpool-auth@main
@@ -83,42 +52,13 @@ jobs:
           cognito-identity-pool-id: "eu-west-1:f011ebda-1864-46b2-8479-f2a8c4bcd4cf"
           aws-region: "eu-west-1" # Overrides AWS_REGION env var
           aws-account-id: "690169311973"
-          set-in-environment: true
-
-      - run: aws ec2 stop-instances --instance-ids=i-01edcb44c259d6fd3
-  shutdown-ami-builder:
-    runs-on: ubuntu-latest
-    needs:
-      - create-ami
-    permissions:
-      id-token: write
-    if: always()
-    steps:
-      - name: "Authenticate using Enhanced AuthFlow"
-        uses: catnekaise/cognito-idpool-auth@main
+          chain-role-arn: "arn:aws:iam::690169311973:role/gh-actions-small-instance-runner"
+          chain-pass-claims: "actor"
+          chain-set-in-environment: true
+      - name: Stop EC2 runner
+        uses: machulav/ec2-github-runner@v2
         with:
-          auth-flow: "enhanced"
-          cognito-identity-pool-id: "eu-west-1:f011ebda-1864-46b2-8479-f2a8c4bcd4cf"
-          aws-region: "eu-west-1" # Overrides AWS_REGION env var
-          aws-account-id: "690169311973"
-          set-in-environment: true
-
-      - run: |
-          snapshot_id=$(aws ec2 create-snapshot --volume-id vol-03eac1eac73dd6808 \
-            --description 'me3-test-os' \
-            --tag-specifications 'ResourceType=snapshot,Tags=[]' | jq -r .SnapshotId)
-
-          aws ec2 register-image \
-              --name me3-test-os \
-              --root-device-name /dev/xvda \
-              --block-device-mappings "DeviceName=/dev/xvda,Ebs={SnapshotId=$snapshot_id}"
-  cleanup:
-    runs-on: ubuntu-latest
-    needs:
-      - build
-      - create-ami
-    if: always()
-    steps:
-    - uses: geekyeggo/delete-artifact@v5
-      with:
-          name: me3-test-os-image
+          mode: stop
+          github-token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
+          label: ${{ needs.start-runner.outputs.label }}
+          ec2-instance-id: ${{ needs.start-runner.outputs.ec2-instance-id }}
